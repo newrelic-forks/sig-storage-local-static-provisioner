@@ -123,9 +123,10 @@ func generateOwnerReference(node *v1.Node) (*metav1.OwnerReference, error) {
 	}
 
 	return &metav1.OwnerReference{
-		Kind: "Node",
-		Name: node.GetName(),
-		UID:  node.UID,
+		APIVersion: "v1",
+		Kind:       "Node",
+		Name:       node.GetName(),
+		UID:        node.UID,
 	}, nil
 }
 
