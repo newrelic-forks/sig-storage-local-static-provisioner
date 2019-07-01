@@ -31,7 +31,7 @@ import (
 
 	"hash/fnv"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -165,6 +165,7 @@ type LocalPVConfig struct {
 	MountOptions    []string
 	FsType          *string
 	Labels          map[string]string
+	OwnerReference  *metav1.OwnerReference
 }
 
 // BuildConfigFromFlags being defined to enable mocking during unit testing
@@ -209,6 +210,9 @@ func CreateLocalPVSpec(config *LocalPVConfig) *v1.PersistentVolume {
 			Labels: config.Labels,
 			Annotations: map[string]string{
 				AnnProvisionedBy: config.ProvisionerName,
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				*config.OwnerReference,
 			},
 		},
 		Spec: v1.PersistentVolumeSpec{

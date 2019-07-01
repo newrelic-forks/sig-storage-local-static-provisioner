@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/sig-storage-local-static-provisioner/pkg/deleter"
 	"sigs.k8s.io/sig-storage-local-static-provisioner/pkg/util"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,6 +45,7 @@ const (
 	testHostDir         = "/mnt/disks"
 	testMountDir        = "/discoveryPath"
 	testNodeName        = "test-node"
+	testNodeUID         = "d9607e19-f88f-11e6-a518-42010a800195"
 	testProvisionerName = "test-provisioner"
 )
 
@@ -74,6 +75,7 @@ var testNode = &v1.Node{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:   testNodeName,
 		Labels: nodeLabels,
+		UID:    testNodeUID,
 	},
 }
 
@@ -555,6 +557,23 @@ func verifyMountOptions(t *testing.T, createdPV *v1.PersistentVolume) {
 	}
 }
 
+func verifyOwnerReference(t *testing.T, pv *v1.PersistentVolume) {
+	ownerReference := &pv.ObjectMeta.OwnerReferences[0]
+	if ownerReference == nil {
+		t.Errorf("No owner reference found")
+	}
+
+	if ownerReference.Name != testNodeName {
+		t.Errorf("Owner reference name is %s, expected %s", ownerReference.Name, testNodeName)
+		return
+	}
+
+	if ownerReference.UID != testNodeUID {
+		t.Errorf("Owner reference UID is %s, expected %s", ownerReference.UID, testNodeUID)
+		return
+	}
+}
+
 // testPVInfo contains all the fields we are intested in validating.
 type testPVInfo struct {
 	pvName       string
@@ -615,6 +634,7 @@ func verifyCreatedPVs(t *testing.T, test *testConfig) {
 		verifyCapacity(t, createdPV, expectedPV)
 		verifyVolumeMode(t, createdPV, expectedPV)
 		verifyMountOptions(t, createdPV)
+		verifyOwnerReference(t, createdPV)
 		// TODO: Verify volume type once that is supported in the API.
 	}
 }
